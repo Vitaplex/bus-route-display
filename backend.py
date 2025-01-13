@@ -224,6 +224,7 @@ def update_cache():
             print(f"Error updating cache: {e}")
         time.sleep(10)  # Update every 10 seconds
 
+
 def main():
     app = Flask(__name__)
 
