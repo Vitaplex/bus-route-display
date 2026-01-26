@@ -5,56 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avganger</title>
     <style>
-        /* Overall background */
+
         body {
             background-color: #121212;
-            color: white; /* Ensure text is visible on dark background */
-            font-family: Arial, sans-serif; /* Use a clean, modern font */
+            color: white;
+            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
         }
 
-        /* Tables container styling */
+       
         #busStopsContainer {
-            display: flex; /* Use Flexbox for layout */
-            flex-wrap: wrap; /* Allow wrapping to the next row */
-            justify-content: space-around; /* Distribute tables evenly */
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
             align-content: flex-start;
             align-items: flex-start;
         }
 
-        /* Table styling */
+       
         table {
-            border-collapse: separate; /* Enable spacing between borders */
-            background-color: #1E1E1E; /* Dark grey table background */
-            border-spacing: 0; /* Remove default table spacing */
-            border-radius: .5em; /* Rounded corners for the entire table */
-            overflow: hidden; /* Clip overflow for rounded corners */
+            border-collapse: separate;
+            background-color: #1E1E1E;
+            border-spacing: 0;
+            border-radius: .5em;
+            overflow: hidden;
             color: white;
         }
 
 
-        /* Header row styling */
+       
         th {
-            background-color: #2A2A2A; /* Slightly lighter dark grey for the header */
-            color: white; /* White text for visibility */
+            background-color: #2A2A2A;
+            color: white;
             padding: 10px;
-            font-size: 1.2em; /* Slightly larger font for headers */
+            font-size: 1.2em;
         }
 
-        /* Table rows */
         td {
-            padding: 10px; /* Add padding inside cells */
-            height: 30px; /* Fixed height for rows */
-            border-top: 1px solid #3C3C3C; /* Dark grey top border */
-            border-bottom: 1px solid #3C3C3C; /* Dark grey bottom border */
+            padding: 10px;
+            height: 30px;
+            border-top: 1px solid #3C3C3C;
+            border-bottom: 1px solid #3C3C3C;
         }
 
-        /* Special styling for the row with Bus Line */
         #busLine {
-            background-color: #75daad; /* Highlighted background */
-            border-radius: .5em; /* Rounded corners for this row */
-            color: black; /* Black text for contrast */
+            background-color: #75daad;
+            border-radius: .5em;
+            color: black;
             font-weight: bold;
         }
     </style>
@@ -62,7 +60,7 @@
 <body>
     <header style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
         <div style="display: flex;justify-content: flex-start;align-items: center;flex-direction: row;gap:10px;">
-            <img height="75" src="https://www.ntnu.edu/documents/13276125/1272238926/ntnu.png/1f92d593-9a60-4bc5-80d2-2a427d1094bd?t=1481020252638">
+            <img height="75">
             <h1 onclick="toggleMotd()">Avganger</h1>
         </div>
         <!-- MOTD -->
@@ -133,11 +131,11 @@
                                 if (bus.hereIn.includes("Min")) {
                                     const minutes = parseInt(bus.hereIn.split(" ")[0]); // Extract the numeric value
                                     if (minutes < 5) {
-                                        timeCellStyle = "color: red; font-weight: bold;"; // Add custom style for less than 10 minutes
+                                        timeCellStyle = "color: #FDFD96; font-weight: bold;"; // Add custom style for less than 10 minutes
                                     }
                                 }
                                 if (bus.hereIn.includes("Nå")) {
-                                    timeCellStyle = "color: red; font-weight: bold;"; // Add custom style for less than 10 minutes
+                                    timeCellStyle = "color: #9F1D35; font-weight: bold;"; // Add custom style for less than 10 minutes
                                 }
                             }
 

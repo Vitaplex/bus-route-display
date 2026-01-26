@@ -4,12 +4,13 @@
     },
     "baseUrl": "https://api.entur.io/journey-planner/v3/graphql",
     "busStops": [
-        "studentersamfundet"
+        "studentersamfundet",
+        "Olav Kyrres gate"
     ],
     "maxResultsToGet":50,
     "maxResultsToView":12,
     "busFilter": {
         "mode" :"include",
-        "values": []
+        "values": ["1","2","71","23","340"]
     }
 }
