@@ -6,7 +6,6 @@ body {
     padding: 0;
 }
 
-
 #busStopsContainer {
     display: flex;
     flex-wrap: wrap;
@@ -14,7 +13,6 @@ body {
     align-content: flex-start;
     align-items: flex-start;
 }
-
 
 table {
     border-collapse: separate;
@@ -24,8 +22,6 @@ table {
     overflow: hidden;
     color: white;
 }
-
-
 
 th {
     background-color: #2A2A2A;
@@ -84,6 +80,16 @@ details textarea {
     height: 640px;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+summary::after {
+    content: "⚙️";
+    margin-left: 8px;
+    font-size: 0.9em;
+}
+
+details[open] summary::after {
+    content: "✖";
 }
 
 
