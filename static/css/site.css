@@ -1,0 +1,98 @@
+body {
+    background-color: #121212;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+
+#busStopsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-content: flex-start;
+    align-items: flex-start;
+}
+
+
+table {
+    border-collapse: separate;
+    background-color: #1E1E1E;
+    border-spacing: 0;
+    border-radius: .5em;
+    overflow: hidden;
+    color: white;
+}
+
+
+
+th {
+    background-color: #2A2A2A;
+    color: white;
+    padding: 10px;
+    font-size: 1.2em;
+}
+
+td {
+    padding: 10px;
+    height: 30px;
+    border-top: 1px solid #3C3C3C;
+    border-bottom: 1px solid #3C3C3C;
+}
+
+#config_container {
+    background-color: #1E1E1E;
+    color: white;
+}
+
+#busLine {
+    background-color: #75daad;
+    border-radius: .5em;
+    color: black;
+    font-weight: bold;
+}
+
+#config_menu {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+}
+
+details.noarrow summary::marker {
+    content: none;
+}
+
+details.noarrow summary {
+    opacity: 50%;
+}
+
+details.noarrow summary:hover {
+    cursor: pointer;
+}
+
+details textarea {
+    font-size: large;
+    width: 25vw;
+    height: 50vh;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/* textarea::-webkit-scrollbar {
+    width: 10px;
+}
+
+textarea::-webkit-scrollbar-track {
+    background: #1d112b;
+}
+
+textarea::-webkit-scrollbar-thumb {
+    background: #1d112b;
+    border: 2px solid #421b5a;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+    background: #452c5a;
+} */

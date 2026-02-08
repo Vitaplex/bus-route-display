@@ -1,181 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
     <title>Avganger</title>
-    <style>
-
-        body {
-            background-color: #121212;
-            color: white;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-       
-        #busStopsContainer {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
-            align-content: flex-start;
-            align-items: flex-start;
-        }
-
-       
-        table {
-            border-collapse: separate;
-            background-color: #1E1E1E;
-            border-spacing: 0;
-            border-radius: .5em;
-            overflow: hidden;
-            color: white;
-        }
-
-
-       
-        th {
-            background-color: #2A2A2A;
-            color: white;
-            padding: 10px;
-            font-size: 1.2em;
-        }
-
-        td {
-            padding: 10px;
-            height: 30px;
-            border-top: 1px solid #3C3C3C;
-            border-bottom: 1px solid #3C3C3C;
-        }
-
-        #busLine {
-            background-color: #75daad;
-            border-radius: .5em;
-            color: black;
-            font-weight: bold;
-        }
-    </style>
 </head>
+
 <body>
     <header style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
+
+        <details class="noarrow" id="config_menu">
+            <summary>
+                <big><strong>⚙</strong></big>
+            </summary>
+            <div style="background-color: rgb(54, 46, 82);padding: 5px; border: 1px solid lightslategrey;">
+                <textarea id="config_container">
+{
+    "motd": "Test 123",
+    "busStops": [
+        "studentersamfundet",
+        "Olav Kyrres gate"
+    ],
+    "maxResultsToGet":50,
+    "maxResultsToView":12,
+    "busFilter": {
+        "mode" :"include",
+        "values": ["1","2","71","23","340"]
+    }
+}</textarea>
+                <br>
+                <button id="config_save" onclick="SaveConfig()">💾</button>
+                <button id="config_save" onclick="LoadConfig()">⏏</button>
+                <button id="config_apply" onclick="ApplyConfig()">Apply</button>
+                &nbsp;<code style="background-color: rgb(38, 33, 69); padding: 4px;" id="config_output"></code>
+            </div>
+        </details>
+
         <div style="display: flex;justify-content: flex-start;align-items: center;flex-direction: row;gap:10px;">
             <img height="75">
-            <h1 onclick="toggleMotd()">Avganger</h1>
+            <h1 onclick="ToggleMotd()">Avganger</h1>
         </div>
         <!-- MOTD -->
-        <div id="motd">
+        <div id="motd_container">
             <div style="display: flex; justify-content: space-between; align-items: center;flex-direction: column;">
                 <b>Dagens melding</b>
-                <h2>Skssssøørt</h2>
-                
+                <h2 id="motd"></h2>
+
             </div>
         </div>
         <h1 id="currentTime" style="padding: 20px;"></h1>
     </header>
-        <div id="busStopsContainer" style="display: flex;">
-        
+    <div id="busStopsContainer" style="display: flex;">
+
     </div>
-    
+
     <script>
-        function toggleMotd() {
-            var motd = document.getElementById("motd");
-            if (motd.hidden) {
-                motd.hidden = false;
+        const defaultConfig = config_container.value;
+
+        ApplyConfig()
+
+        UpdateTime();
+
+        UpdateTimeTable();
+
+        setInterval(UpdateTimeTable, 5000);
+        setInterval(UpdateTime, 1000);
+
+        function SaveConfig() {
+            ApplyConfig()
+            const json = JSON.stringify(JSON.parse(config_container.value), null, 4);
+
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "bus_stop_config.json";
+            a.click();
+
+            URL.revokeObjectURL(url);
+
+            config_output.innerHTML = "Config exported";
+        }
+
+        async function LoadConfig() {
+            const options = {
+                types: [
+                    {
+                        description: 'JSON Files',
+                        accept: {
+                            'application/json': ['.json'],
+                        },
+                    },
+                ],
+                
+                multiple: false,
+            };
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+
+            const file = await fileHandle.getFile();
+
+            if (file.size > 32768) {
+                config_output.innerHTML = `Max file size: 32KB`;
                 return;
             }
-            motd.hidden = true;
-            return;
+
+            const contents = await file.text();
+            config_container.value = contents;
+            ApplyConfig()
+            config_output.innerHTML = `Config loaded: ${file.name}`;
+
         }
 
-        function UpdateTimeTable() {
-            // Fetch timetable data from the Flask API
-            fetch('/api/timetable')
-                .then(response => response.json()) // Parse JSON data from the response
-                .then(data => {
-                    const container = document.querySelector('#busStopsContainer'); // Assuming a container div for bus stops
-                    container.innerHTML = ''; // Clear any existing tables
-                    data.sort((a, b) => a.stopName.localeCompare(b.stopName));
+        // CTRL+Space for toggling config menu
+        document.addEventListener("keydown", function (event) {
 
-                    data.forEach(busStop => {
-                        // Create a table for each bus stop
-                        const stopTable = document.createElement('table');
-                        stopTable.style.margin = "20px 0"; // Add some spacing between tables
-                        stopTable.style.padding = "20px 0"; // Add some spacing between tables
-                        stopTable.style.border = "1px solid black"; // Basic styling
+            if (event.ctrlKey && event.code === "Space") {
+                event.preventDefault();
 
-                        // Add a header row with the stop name
-                        const headerRow = document.createElement('tr');
-                        const headerCell = document.createElement('th');
-                        headerCell.colSpan = 3; // Span across all columns
-                        headerCell.textContent = busStop.stopName; // Use the stop name as the table header
-                        headerCell.style.textAlign = 'center';
-                        headerRow.appendChild(headerCell);
-                        stopTable.appendChild(headerRow);
+                config_menu.open = !config_menu.open;
 
-                        // Add a sub-header row for column names
-                        const subHeaderRow = document.createElement('tr');
-                        subHeaderRow.innerHTML = `
-                            <th>Linje</th>
-                            <th></th>
-                            <th>Ankomst</th>
-                        `;
-                        stopTable.appendChild(subHeaderRow);
+                requestAnimationFrame(() => {
+                    config_container.focus();
+                });
+            }
+        });
 
-                        // Add rows for each bus in this bus stop
-                        busStop.BusEntries.forEach(bus => {
-                            const row = document.createElement('tr');
-                            let timeCellStyle = "";
-                            if (bus.hereIn.includes("Min") || bus.hereIn.includes("Nå")) {
+        config_container.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+                e.preventDefault();
+                ApplyConfig();
+            }
+        });
 
-                                if (bus.hereIn.includes("Min")) {
-                                    const minutes = parseInt(bus.hereIn.split(" ")[0]); // Extract the numeric value
-                                    if (minutes < 5) {
-                                        timeCellStyle = "color: #FDFD96; font-weight: bold;"; // Add custom style for less than 10 minutes
-                                    }
-                                }
-                                if (bus.hereIn.includes("Nå")) {
-                                    timeCellStyle = "color: #9F1D35; font-weight: bold;"; // Add custom style for less than 10 minutes
-                                }
-                            }
 
-                            row.innerHTML = `
-                                <td id="busLine"><svg xmlns="http://www.w3.org/2000/svg" width="20" viewBox="0 0 576 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M288 0C422.4 0 512 35.2 512 80l0 16 0 32c17.7 0 32 14.3 32 32l0 64c0 17.7-14.3 32-32 32l0 160c0 17.7-14.3 32-32 32l0 32c0 17.7-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32l0-32-192 0 0 32c0 17.7-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32l0-32c-17.7 0-32-14.3-32-32l0-160c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32c0 0 0 0 0 0l0-32s0 0 0 0l0-16C64 35.2 153.6 0 288 0zM128 160l0 96c0 17.7 14.3 32 32 32l112 0 0-160-112 0c-17.7 0-32 14.3-32 32zM304 288l112 0c17.7 0 32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-112 0 0 160zM144 400a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm288 0a32 32 0 1 0 0-64 32 32 0 1 0 0 64zM384 80c0-8.8-7.2-16-16-16L208 64c-8.8 0-16 7.2-16 16s7.2 16 16 16l160 0c8.8 0 16-7.2 16-16z"/></svg>  ${bus.line}</td>
-                                <td>${bus.destination}</td>
-                                <td style="${timeCellStyle}">${bus.hereIn}</td>
-                            `;
-                                
-                            stopTable.appendChild(row);
-                        });
-
-                        // Append the table to the container
-                        container.appendChild(stopTable);
-                    });
-                })
-                .catch(error => console.error('Error fetching timetable data:', error));            
+        function GetCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
         }
 
-        // Set the function to run every xx seconds
-        setInterval(UpdateTimeTable, 10000);
-        
-        // Call it once immediately to load the timetable when the page loads
-        UpdateTimeTable();
-        
-        function updateTime() {
-            const currentTimeElement = document.getElementById('currentTime');
+        function ApplyConfig() {
+            config_output.innerHTML = ""
+
+            try {
+                let configCookie = GetCookie("config");
+                let confContainerCurrentValue = config_container.value;
+
+                let valueIsDefault = configCookie === defaultConfig;
+
+                let valueChangedByUser = confContainerCurrentValue !== defaultConfig && confContainerCurrentValue !== configCookie;
+
+                if (!configCookie || valueIsDefault) {
+                    configCookie = confContainerCurrentValue;
+                }
+                else {
+                    if (valueChangedByUser) {
+                        configCookie = confContainerCurrentValue;
+                    }
+                    else {
+                        config_container.value = configCookie
+                    }
+                }
+
+                JSON.parse(configCookie)
+
+                config_output.innerHTML = "Config applied"
+                document.cookie = `config=${encodeURIComponent(configCookie)}; path=/`
+
+                UpdateMotd()
+
+            } catch (error) {
+                config_output.innerHTML = error
+            }
+        }
+
+        function ToggleMotd() {
+            motd_container.hidden = !motd_container.hidden;
+        }
+
+        function UpdateTime() {
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const seconds = String(now.getSeconds()).padStart(2, '0');
-            currentTimeElement.textContent = `${hours}:${minutes}:${seconds}`;
+            currentTime.textContent = `${hours}:${minutes}:${seconds}`;
         }
 
-        // Update the time every minute
-        setInterval(updateTime, 1000);
-        updateTime();  // Set the initial time when the page loads
+        function UpdateMotd() {
+            let jsonConfig = GetCookie("config");
+            let config = JSON.parse(jsonConfig);
 
-        
+            if (config.motd == "") {
+                motd_container.hidden = true;
+            }
+            else {
+                motd_container.hidden = false;
+                motd.innerText = config.motd;
+            }
+        }
+
+        function UpdateTimeTable() {
+            let bodyContent = GetCookie("config")
+
+            fetch('/api/timetable', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: bodyContent
+            })
+                .then(response => response.json())
+                .then(data => ProcessData(data))
+                .catch(error => console.error('Error fetching timetable data:', error));
+        }
+
+        function ProcessData(data) {
+
+            const bus_stop_container = document.querySelector('#busStopsContainer');
+            bus_stop_container.innerHTML = '';
+            data.sort((a, b) => a.stopName.localeCompare(b.stopName));
+
+            data.forEach(busStop => {
+                // Create a table for each bus stop
+                const stopTable = document.createElement('table');
+                stopTable.style.margin = "20px 0";
+                stopTable.style.padding = "20px 0";
+                stopTable.style.border = "1px solid black";
+
+                // Add a header row with the stop name
+                const headerRow = document.createElement('tr');
+                const headerCell = document.createElement('th');
+                headerCell.colSpan = 3;
+                headerCell.textContent = busStop.stopName;
+                headerCell.style.textAlign = 'center';
+                headerRow.appendChild(headerCell);
+                stopTable.appendChild(headerRow);
+
+                // Add a sub-header row for column names
+                const subHeaderRow = document.createElement('tr');
+                subHeaderRow.innerHTML = `
+                            <th>Linje</th>
+                            <th></th>
+                            <th>Ankomst</th>
+                        `;
+                stopTable.appendChild(subHeaderRow);
+
+                // Add rows for each bus in this bus stop
+                busStop.BusEntries.forEach(bus => {
+                    const row = document.createElement('tr');
+                    let timeCellStyle = "";
+                    if (bus.hereIn.includes("Min") || bus.hereIn.includes("Nå")) {
+
+                        if (bus.hereIn.includes("Min")) {
+                            const minutes = parseInt(bus.hereIn.split(" ")[0]);
+                            if (minutes < 5) {
+                                timeCellStyle = "color: #FDFD96; font-weight: bold;";
+                            }
+                        }
+                        if (bus.hereIn.includes("Nå")) {
+                            timeCellStyle = "color: #9F1D35; font-weight: bold;";
+                        }
+                    }
+
+                    row.innerHTML = `
+                                <td id="busLine"><svg xmlns="http://www.w3.org/2000/svg" width="20" viewBox="0 0 576 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M288 0C422.4 0 512 35.2 512 80l0 16 0 32c17.7 0 32 14.3 32 32l0 64c0 17.7-14.3 32-32 32l0 160c0 17.7-14.3 32-32 32l0 32c0 17.7-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32l0-32-192 0 0 32c0 17.7-14.3 32-32 32l-32 0c-17.7 0-32-14.3-32-32l0-32c-17.7 0-32-14.3-32-32l0-160c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32c0 0 0 0 0 0l0-32s0 0 0 0l0-16C64 35.2 153.6 0 288 0zM128 160l0 96c0 17.7 14.3 32 32 32l112 0 0-160-112 0c-17.7 0-32 14.3-32 32zM304 288l112 0c17.7 0 32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-112 0 0 160zM144 400a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm288 0a32 32 0 1 0 0-64 32 32 0 1 0 0 64zM384 80c0-8.8-7.2-16-16-16L208 64c-8.8 0-16 7.2-16 16s7.2 16 16 16l160 0c8.8 0 16-7.2 16-16z"/></svg>  ${bus.line}</td>
+                                <td>${bus.destination}</td>
+                                <td style="${timeCellStyle}">${bus.hereIn}</td>
+                            `;
+
+                    stopTable.appendChild(row);
+                });
+
+                // Append the table to the config_container
+                bus_stop_container.appendChild(stopTable);
+            });
+        }
 
     </script>
 </body>
+
 </html>
