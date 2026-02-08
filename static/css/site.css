@@ -63,8 +63,15 @@ details.noarrow summary::marker {
     content: none;
 }
 
+details.noarrow summary::-webkit-details-marker {
+    display: none;
+}
+
 details.noarrow summary {
     opacity: 50%;
+    list-style: none;
+    cursor: pointer;
+
 }
 
 details.noarrow summary:hover {
@@ -73,8 +80,8 @@ details.noarrow summary:hover {
 
 details textarea {
     font-size: large;
-    width: 25vw;
-    height: 50vh;
+    width: 480px;
+    height: 640px;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
