@@ -1,9 +1,10 @@
+import re
 import requests
 import json
 import time
 from datetime import datetime, timedelta, timezone
 
-from src.helpers.helpers import GetStopPlaceByName, ReplaceUnknownCharacters
+from src.helpers.helpers import GetStopPlaceByNameAndFilter, ReplaceUnknownCharacters, NormalizeStopName
 from src.models import bus_entry, bus_stops
 
 class BusStopInformationService:
@@ -24,9 +25,9 @@ class BusStopInformationService:
 
         configBusStops = [ReplaceUnknownCharacters(busstop) for busstop in configuration['busStops']]
 
-        busStopQuays = GetStopPlaceByName(self.busStops, configBusStops)
-
         print(f"Finding bus stops near {', '.join(configBusStops)}..")
+        
+        busStopQuays = GetStopPlaceByNameAndFilter(self.busStops, configBusStops)
 
         newstops = [quay['id'] for quay in busStopQuays]
         
@@ -53,81 +54,48 @@ class BusStopInformationService:
         content = response.json()
         
         busDeparturesFinal = []
-
-        busStops = content['data']['quays']
         
+        busStops = content['data']['quays']
         for busStop in busStops:
-            quayId = busStop['id']
+                        
+            busStopItem = busStop.get('estimatedCalls',[])
+            
+            if len(busStopItem) < 1:
+                continue
+            
+            busStopItem = busStopItem[0]
             
             busFilter = configuration['busFilter']
             
             filterValues = configuration['busFilter']['values']
 
             departures = []
-
-            if busFilter['mode'] == "exclude":
-                for bus in busStop['estimatedCalls']:
-                    if bus['serviceJourney']['journeyPattern']['line']['publicCode'] not in filterValues:
-                        departures.append(bus)
-
-            elif busFilter['mode'] == "include":
-                for bus in busStop['estimatedCalls']:
-                    if len(filterValues) == 0:
-                        departures.append(bus)
-
-                    if bus['serviceJourney']['journeyPattern']['line']['publicCode'] in filterValues:
-                        departures.append(bus)
-            else:
-                raise Exception("filter mode not recognized")
-
-            singleBusStop = None
-            for bus in departures:
-                busStopName = busStop['estimatedCalls'][0]['quay']['name']
-                busStopNumber = busStop['estimatedCalls'][0]['quay']['publicCode']
-
-                if busStopNumber is not None:
-                    stopName = busStopName + " " + busStopNumber if busStopNumber is not None else busStopName
-                else:
-                    stopName = busStopName
-
-                line = bus['serviceJourney']['journeyPattern']['line']['publicCode']
-                dest = bus['destinationDisplay']['frontText']
-                if len(bus['destinationDisplay']['via']) > 0:
-                    via = "via" + bus['destinationDisplay']['via'][0]
-                arrival = bus['aimedArrivalTime']
-                excpectedArrival = bus['expectedArrivalTime']
-
-                via = None
-                excpectedArrivalMinutes = None
-
-                # Format the arrival date to either be "minutes until the bus arrives" 
-                # or "HH:MM formatted timestamp for when it arrives"
-                excpectedArrivalMinutes =  BusStopInformationService.FormatBusArrivalDate(excpectedArrival)
-
-                # Add "Via" field to the destination
-                if via is not None:
-                    dest += " via " + via
-
-                # A single bus
-                busInstance = bus_entry.BusEntry(
-                    line=line,
-                    destination=dest,
-                    estArrival=datetime.fromisoformat(arrival),
-                    hereIn=excpectedArrivalMinutes,
-                    busStopName=stopName
-                    )
+   
+            for bus in busStop['estimatedCalls']:
+                busAppendage = None
                 
-                if singleBusStop is not None:
-                    singleBusStop.BusEntries.append(busInstance)
+                lineCode = bus['serviceJourney']['journeyPattern']['line']['publicCode']
+                
+                if busFilter['mode'] == "exclude":
+                    if lineCode not in filterValues:
+                        busAppendage = bus
+                    
                 else:
-                    # We only go in here the first time, to create the bus stop instance.
-                    singleBusStop = bus_stops.BusStops(quayId,stopName)
-                    singleBusStop.BusEntries.append(busInstance)
+                    if len(filterValues) == 0:
+                        busAppendage = bus
+                    if lineCode in filterValues:
+                        busAppendage = bus
+                        
+                if busAppendage != None:
+                    departures.append(busAppendage)
+
+            busStop = self.NormalizeStopNameDepartures(departures)
 
             # When all bus departures have been processed, add them to the list of bus stops
-            if singleBusStop is not None:
-                busDeparturesFinal.append(singleBusStop)
-        busDeparturesFinal = BusStopInformationService.NormalizeToMaxResults(busDeparturesFinal,configuration['maxResultsToView'])
+            if busStop is not None:
+                busDeparturesFinal.append(busStop)
+
+        busDeparturesFinal = BusStopInformationService.NormalizeStopNameToMaxResults(busDeparturesFinal,configuration['maxResultsToView'])
         return busDeparturesFinal
 
     def FormatBusArrivalDate(arrivalDate):
@@ -143,8 +111,62 @@ class BusStopInformationService:
                 return f"{minutes_left} Min"
         else:
             return excpctArrival_datetime.strftime("%H:%M")
+        
 
-    def NormalizeToMaxResults(busDeparturesObject, maxResults):
+    def NormalizeStopNameDepartures(self, departures):
+        if departures == [] :return
+        
+        busStop = None
+        quayId = departures[0]['quay']['id']
+        busStopName = departures[0]['quay']['name']
+        busStopNumber = departures[0]['quay']['publicCode']
+        busStopDescription = departures[0]['quay']['description'] or ""
+
+        for bus in departures:
+            if busStopNumber is not None:
+                stopName = busStopName + " " + busStopNumber if busStopNumber is not None else busStopName
+            else:
+                stopName = busStopName
+
+            line = bus['serviceJourney']['journeyPattern']['line']['publicCode']
+            dest = bus['destinationDisplay']['frontText']
+            
+            if (vias := bus['destinationDisplay'].get('via')):
+                via = "via " + vias[0]
+                
+            arrival = bus['aimedArrivalTime']
+            excpectedArrival = bus['expectedArrivalTime']
+
+            via = None
+            excpectedArrivalMinutes = None
+
+            # Format the arrival date to either be "minutes until the bus arrives" 
+            # or "HH:MM formatted timestamp for when it arrives"
+            excpectedArrivalMinutes =  BusStopInformationService.FormatBusArrivalDate(excpectedArrival)
+
+            # Add "Via" field to the destination
+            if via is not None:
+                dest += " via " + via
+
+            # A single bus
+            busInstance = bus_entry.BusEntry(
+                line=line,
+                destination=dest,
+                estArrival=datetime.fromisoformat(arrival),
+                hereIn=excpectedArrivalMinutes,
+                stopName=stopName
+                )
+            
+            if busStop is not None:
+                busStop.BusEntries.append(busInstance)
+            else:
+                # We only go in here the first time, to create the bus stop instance.
+                busStop = bus_stops.BusStops(quayId,stopName,busStopDescription)
+                busStop.BusEntries.append(busInstance)
+                
+        return busStop
+
+    def NormalizeStopNameToMaxResults(busDeparturesObject, maxResults):
         for busStop in busDeparturesObject:
             busStop.BusEntries = busStop.BusEntries[:int(maxResults)]
         return busDeparturesObject

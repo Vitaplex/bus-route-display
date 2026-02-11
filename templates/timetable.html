@@ -17,16 +17,16 @@
             <div style="background-color: rgb(54, 46, 82);padding: 5px; border: 1px solid lightslategrey;">
                 <textarea id="config_container">
 {
-    "motd": "Test 123",
+    "motd": ["Test 123"],
     "busStops": [
-        "studentersamfundet",
-        "Olav Kyrres gate"
+        "studentersamfundet||nidelven",
+        "Olav Kyrres gate (^\\w)"
     ],
     "maxResultsToGet":50,
     "maxResultsToView":12,
     "busFilter": {
         "mode" :"include",
-        "values": ["1","2","71","23","340"]
+        "values": []
     }
 }</textarea>
                 <br>
@@ -65,7 +65,7 @@
         UpdateTimeTable();
 
         setInterval(UpdateTimeTable, 5000);
-        setInterval(UpdateTime, 1000);
+        setInterval(UpdateTime, 100);
 
         function SaveConfig() {
             ApplyConfig()
@@ -149,15 +149,17 @@
                 let configCookie = GetCookie("config");
                 let confContainerCurrentValue = config_container.value;
 
-                let valueIsDefault = configCookie === defaultConfig;
+                let cookieIsDefault = configCookie === defaultConfig;
+
+                let currentValueIsDefault = confContainerCurrentValue === defaultConfig;
 
                 let valueChangedByUser = confContainerCurrentValue !== defaultConfig && confContainerCurrentValue !== configCookie;
 
-                if (!configCookie || valueIsDefault) {
+                if (!configCookie || cookieIsDefault) {
                     configCookie = confContainerCurrentValue;
                 }
                 else {
-                    if (valueChangedByUser) {
+                    if (valueChangedByUser || currentValueIsDefault) {
                         configCookie = confContainerCurrentValue;
                     }
                     else {
@@ -193,7 +195,7 @@
             let jsonConfig = GetCookie("config");
             let config = JSON.parse(jsonConfig);
 
-            if (config.motd == "") {
+            if (config.motd == []) {
                 motd_container.hidden = true;
             }
             else {
@@ -232,7 +234,7 @@
                 const headerRow = document.createElement('tr');
                 const headerCell = document.createElement('th');
                 headerCell.colSpan = 3;
-                headerCell.textContent = busStop.stopName;
+                headerCell.innerHTML = `${busStop.stopName} <br><sup>${busStop.busStopDescription}</sup>`;
                 headerCell.style.textAlign = 'center';
                 headerRow.appendChild(headerCell);
                 stopTable.appendChild(headerRow);

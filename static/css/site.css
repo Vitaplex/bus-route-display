@@ -29,6 +29,11 @@ th {
     padding: 10px;
     font-size: 1.2em;
 }
+th sup{
+    color: rgb(167, 167, 167);
+    font-size: small;
+    font-style: italic;
+}
 
 td {
     padding: 10px;
