@@ -17,10 +17,14 @@
             <div style="background-color: rgb(54, 46, 82);padding: 5px; border: 1px solid lightslategrey;">
                 <textarea id="config_container">
 {
-    "motd": ["Test 123"],
+    "motd": [
+        "Ha en skørt dag", 
+        "Ha en saftig dag", 
+        "Ha en fin dag"
+    ],
     "busStops": [
         "studentersamfundet||nidelven",
-        "Olav Kyrres gate (^\\w)"
+        "Olav Kyrres gate$"
     ],
     "maxResultsToGet":50,
     "maxResultsToView":12,
@@ -200,7 +204,7 @@
             }
             else {
                 motd_container.hidden = false;
-                motd.innerText = config.motd;
+                motd.innerText = config.motd[Math.floor(Math.random() * config.motd.length)];
             }
         }
 
