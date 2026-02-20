@@ -24,7 +24,7 @@ def GetStopPlaceByNameAndFilter(busStopsObject, configBusStops):
             namePattern = pattern.get('stop_pattern')
             descPattern = pattern.get('stop_description')
             
-            nameMatch = re.search(namePattern, quayName) or re.match(pattern.get('stop_pattern', ''), quayNameWithNumber)
+            nameMatch = re.search(namePattern, quayNameWithNumber)
             
             descMatch = re.search(descPattern, quayDescription) if descPattern is not None else None
 

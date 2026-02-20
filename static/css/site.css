@@ -21,6 +21,7 @@ table {
     border-radius: .5em;
     overflow: hidden;
     color: white;
+
 }
 
 th {
@@ -29,6 +30,18 @@ th {
     padding: 10px;
     font-size: 1.2em;
 }
+/* 
+th:nth-child(1) {
+    width: 32px;
+}
+
+th:nth-child(2) {
+}
+
+th:nth-child(3) {
+    width: 48px;
+} */
+
 th sup{
     color: rgb(167, 167, 167);
     font-size: small;
