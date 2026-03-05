@@ -174,7 +174,7 @@
                 JSON.parse(configCookie)
 
                 config_output.innerHTML = "Config applied"
-                document.cookie = `config=${encodeURIComponent(configCookie)}; path=/`
+                document.cookie = `config=${encodeURIComponent(configCookie)}; expires=${new Date().setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000))}; path=/`
 
                 UpdateMotd()
 
