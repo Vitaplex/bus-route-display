@@ -174,7 +174,7 @@
                 JSON.parse(configCookie)
 
                 config_output.innerHTML = "Config applied"
-                document.cookie = `config=${encodeURIComponent(configCookie)}; path=/; max-age=${60 * 60 * 24 * 365}`;
+                document.cookie = `config=${encodeURIComponent(configCookie)}; max-age=${60 * 60 * 24 * 365}; path=/;`;
 
                 UpdateMotd()
 
