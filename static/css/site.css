@@ -4,24 +4,25 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    overflow: hidden;
 }
 
 #busStopsContainer {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    align-content: flex-start;
-    align-items: flex-start;
+    justify-content: center;
+    gap:1vw;
+}
+
+.table-wrapper{
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
 }
 
 table {
-    border-collapse: separate;
     background-color: #1E1E1E;
     border-spacing: 0;
-    border-radius: .5em;
-    overflow: hidden;
     color: white;
-
+    z-index: 10;
 }
 
 th {
@@ -29,18 +30,7 @@ th {
     color: white;
     padding: 10px;
     font-size: 1.2em;
-}
-/* 
-th:nth-child(1) {
-    width: 32px;
-}
-
-th:nth-child(2) {
-}
-
-th:nth-child(3) {
-    width: 48px;
-} */
+}    
 
 th sup{
     color: rgb(167, 167, 167);
@@ -48,29 +38,42 @@ th sup{
     font-style: italic;
 }
 
+tr{
+    color:rgb(255, 186, 96);
+    background-color: #1E1E1E;
+}
+
 td {
     padding: 10px;
     height: 30px;
-    border-top: 1px solid #3C3C3C;
-    border-bottom: 1px solid #3C3C3C;
+    border-block: 1px solid #3C3C3C;
+}
+
+#time{
+color: rgb(187, 238, 217);
+}
+
+#minutes{
+    color: rgb(228, 215, 104);
+}
+
+#soon{
+    color: rgb(230, 83, 47);
+}
+
+#now{
+    color: rgb(255, 20, 40);
+}
+
+#busLine {
+    background-color: #75daad;
+    color: black;
+    font-weight: bold;
 }
 
 #config_container {
     background-color: #1E1E1E;
     color: white;
-}
-
-#busLine {
-    background-color: #75daad;
-    border-radius: .5em;
-    color: black;
-    font-weight: bold;
-}
-
-#config_menu {
-    position: absolute;
-    top: 15px;
-    left: 15px;
 }
 
 details.noarrow summary::marker {
@@ -110,20 +113,14 @@ details[open] summary::after {
     content: "✖";
 }
 
-
-/* textarea::-webkit-scrollbar {
-    width: 10px;
+#config_menu {
+    z-index: 10;
+    position: absolute;
+    top: 15px;
+    left: 15px;
 }
 
-textarea::-webkit-scrollbar-track {
-    background: #1d112b;
-}
 
-textarea::-webkit-scrollbar-thumb {
-    background: #1d112b;
-    border: 2px solid #421b5a;
+*::-webkit-scrollbar {
+    display:none;
 }
-
-textarea::-webkit-scrollbar-thumb:hover {
-    background: #452c5a;
-} */

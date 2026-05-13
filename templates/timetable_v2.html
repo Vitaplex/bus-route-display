@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+    <script type="module" src="{{ url_for('static', filename='js/index.js') }}"></script>
+    <title>Avganger</title>
+</head>
+
+<body>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 10px;">
+
+        <details class="noarrow" id="config_menu">
+            <summary>
+            </summary>
+            <div style="background-color: rgb(54, 46, 82);padding: 5px; border: 1px solid lightslategrey;">
+                <textarea id="config_container">
+{
+    "motd": [
+        "Ha en skørt dag", 
+        "Ha en saftig dag", 
+        "Ha en fin dag"
+    ],
+    "busStops": [
+        "studentersamfundet",
+        "Olav Kyrres gate$"
+    ],
+    "maxResultsToGet":50,
+    "maxResultsToView":12,
+    "busFilter": {
+        "mode" :"include",
+        "values": []
+    }
+}</textarea>
+                <br>
+                <button id="config_save" onclick="SaveConfig()">💾</button>
+                <button id="config_save" onclick="LoadConfig()">⏏</button>
+                <button id="config_apply" onclick="ApplyConfig()">Apply</button>
+                &nbsp;<code style="background-color: rgb(38, 33, 69); padding: 4px;" id="config_output"></code>
+            </div>
+        </details>
+
+        <div style="display: flex;justify-content: flex-start;align-items: center;flex-direction: row;gap:10px;">
+            <img height="75">
+            <h1 onclick="ToggleMotd()">Avganger</h1>
+        </div>
+        <!-- MOTD -->
+        <div id="motd_container">
+            <div style="display: flex; justify-content: space-between; align-items: center;flex-direction: column;">
+                <b>Dagens melding</b>
+                <h2 id="motd"></h2>
+
+            </div>
+        </div>
+        <h1 id="currentTime" style="padding: 20px;"></h1>
+    </header>
+    <div id="busStopsContainer">
+
+    </div>
+
+    <script>
+        const defaultConfig = config_container.value;
+        ApplyConfig()
+
+        UpdateTime();
+        
+        setInterval(UpdateTime,100);
+
+        // CTRL+Space for toggling config menu
+        document.addEventListener("keydown", function (event) {
+            if (event.ctrlKey && event.code === "Space") {
+                event.preventDefault();
+
+                config_menu.open = !config_menu.open;
+
+                requestAnimationFrame(() => {
+                    config_container.focus();
+                });
+            }
+        });
+
+        config_container.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+                e.preventDefault();
+                ApplyConfig();
+            }
+        });
+
+        function SaveConfig() {
+            ApplyConfig()
+            const json = JSON.stringify(JSON.parse(config_container.value), null, 4);
+
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "bus_stop_config.json";
+            a.click();
+
+            URL.revokeObjectURL(url);
+
+            config_output.innerHTML = "Config exported";
+        }    
+
+        async function LoadConfig() {
+            const options = {
+                types: [
+                    {
+                        description: 'JSON Files',
+                        accept: {
+                            'application/json': ['.json'],
+                        },    
+                    },    
+                ],    
+                
+                multiple: false,
+            };    
+
+            const [fileHandle] = await window.showOpenFilePicker(options);
+
+            const file = await fileHandle.getFile();
+
+            if (file.size > 32768) {
+                config_output.innerHTML = `Max file size: 32KB`;
+                return;
+            }    
+
+            const contents = await file.text();
+            config_container.value = contents;
+            ApplyConfig()
+            config_output.innerHTML = `Config loaded: ${file.name}`;
+
+        }    
+
+        function GetCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+        }
+
+        function ApplyConfig() {
+            config_output.innerHTML = ""
+
+            try {
+                let configCookie = GetCookie("config");
+                let confContainerCurrentValue = config_container.value;
+
+                let cookieIsDefault = configCookie === defaultConfig;
+
+                let currentValueIsDefault = configCookie === defaultConfig;
+
+                let valueChangedByUser = confContainerCurrentValue !== defaultConfig && confContainerCurrentValue !== configCookie;
+
+                if (!configCookie || cookieIsDefault) {
+                    configCookie = confContainerCurrentValue;
+                }
+                else {
+                    if (valueChangedByUser || currentValueIsDefault) {
+                        configCookie = confContainerCurrentValue;
+                    }
+                    else {
+                        config_container.value = configCookie
+                    }
+                }
+
+                JSON.parse(configCookie)
+
+                config_output.innerHTML = "Config applied"
+                document.cookie = `config=${encodeURIComponent(configCookie)}; max-age=${60 * 60 * 24 * 365}; path=/;`;
+
+                UpdateMotd()
+
+            } catch (error) {
+                config_output.innerHTML = error
+            }
+        }
+
+        function ToggleMotd() {
+            motd_container.hidden = !motd_container.hidden;
+        }
+
+        function UpdateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            currentTime.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        function UpdateMotd() {
+            let jsonConfig = GetCookie("config");
+            let config = JSON.parse(jsonConfig);
+
+            if (config.motd == []) {
+                motd_container.hidden = true;
+            }
+            else {
+                motd_container.hidden = false;
+                motd.innerText = config.motd[Math.floor(Math.random() * config.motd.length)];
+            }
+        }
+    </script>
+</body>
+
+</html>
