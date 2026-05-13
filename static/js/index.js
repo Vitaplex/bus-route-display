@@ -229,6 +229,10 @@ function createHeaderCell(quay) {
     headerCell.colSpan = 3;
     
     setTitle(headerCell, quay);
+    headerCell.innerHTML = `${quay.name}<br>&nbsp;`;
+    if (quay.description) {
+        headerCell.innerHTML += `<sup>${quay.description}</sup>`;
+    }
 
     headerCell.addEventListener("mouseenter", () => {
 	headerCell.innerHTML = `${quay.id}<br>&nbsp;`;
@@ -236,6 +240,7 @@ function createHeaderCell(quay) {
 
     headerCell.addEventListener("mouseleave", () => {
 	setTitle(headerCell, quay);
+	headerCell.innerHTML = `${quay.name}<br>&nbsp;`;
     });
 
     headerCell.style.textAlign = 'center';
