@@ -26,6 +26,11 @@ def main():
     def index():
         return render_template('/timetable.html')
 
+    # Main route to render the page
+    @app.route('/v2')
+    def v2():
+        return render_template('/timetable_v2.html')
+
     app.run(debug=True)
         
         
